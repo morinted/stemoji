@@ -22,14 +22,14 @@ if (Object.keys(emojis)
   process.exit(1)
 }
 
-// List of exceptions to the emoji naming scheme
-// that I expect.
+// We replace these emoji.
+// For example, there'll be no "thumbsup" emoji,
+// Instead, there'll be a "thumbs_up" emoji.
 const exceptions =
   { couplekiss: [ 'couple', 'kiss' ]
   , thumbsup: [ 'thumbs', 'up' ]
   , thumbsdown: [ 'thumbs', 'down' ]
   , heartpulse: [ 'heart', 'pulse' ]
-  , tophat: [ 'top', 'hat' ]
   , '8ball': [ '8', 'ball' ]
   , icecream: [ 'ice', 'cream' ]
   , trackball: [ 'track', 'ball' ]
@@ -47,19 +47,73 @@ const exceptions =
   , fuelpump: [ 'fuel', 'pump' ]
   , motorboat: [ 'motor', 'boat' ]
   , cableway: [ 'cable', 'way' ]
-  , tada: [ 'ta-da' ]
   , minidisc: [ 'mini', 'disc' ]
   , minibus: [ 'mini', 'bus' ]
   , contruction: [ 'construction' ]
   , trolleybus: [ 'trolley', 'bus' ]
   , down2: [ 'down', '2' ]
   , hotsprings: [ 'hot', 'springs' ]
+  , jp: [ 'japan' ]
+  , kr: [ 'korean' ]
+  , cn: [ 'china' ]
+  , us: [ 'united states' ]
+  , gb: [ 'great britain' ]
+  , fr: [ 'france' ]
+  , es: [ 'spain' ]
+  , de: [ 'denmark' ]
+  , ru: [ 'russia' ]
+  , uk: [ 'united kingdom' ]
+  , it: [ 'italy' ]
   }
+
+const doSubstitutes = (emojis) => {
+  // Recursively substitute these words in strings
+  // Doesn't delete original code.
+  const substitutes =
+    { "grey": "gray"
+    , "exclamation": "!"
+    , "heavy_exclamation_mark": "exclamation_2"
+    , "heavy_dollar_sign": "$"
+    , "heavy_plus_sign": "+"
+    , "heavy_division_sign": "\u00F7"
+    , "heavy_minus_sign": "-"
+    , "africas": "africa"
+    , "ok_": "okay"
+    , "tophat": "top_hat"
+    , "tada": "ta-da"
+    }
+  return (a, shortname) => {
+    let substitute = substitutes[shortname]
+
+    const processSubstitutes = (newShort) => {
+      Object.keys(substitutes).forEach(key => {
+        if (newShort.includes(key)) {
+          substitute = newShort.replace(new RegExp(key, 'g')
+                                        , substitutes[key]
+                                        )
+          if (!a[substitute]) {
+            a[substitute] = { ...a[newShort]
+                            , shortname: substitute
+                            }
+            processSubstitutes(substitute)
+          }
+        }
+      })
+    }
+    a[shortname] = emojis[shortname]
+    processSubstitutes(shortname)
+    return a
+  }
+}
+
+
+let extendedEmojis =
+  Object.keys(emojis)
+    .reduce(doSubstitutes(emojis), {})
 
 let wordNumber = /^[^\d_]+\d$/
 const shortnames =
-  Object.keys(emojis)
-    .filter(x => !emojis[x].shortname.includes('flag'))
+  Object.keys(extendedEmojis)
     .map(x => {
       let words =
         (x.match(wordNumber) ?
@@ -76,8 +130,14 @@ const shortnames =
 
       return { shortname: x
              , words
-             , unicode: String.fromCodePoint(parseInt(emojis[x].unicode, 16))
+             , unicode: extendedEmojis[x].unicode
+                .split('-').reduce((z, y) => {
+                  return z + String.fromCodePoint(
+                      parseInt(extendedEmojis[x].unicode, 16)
+                    )
+                }, '')
              }
+             
     })
 
 const dictionaryByWord =
@@ -116,8 +176,7 @@ let emojiDictionary =
       // Get all posible entries for each word
       .map(x => dictionaryByWord[x])
       .reduce((arrays, list) => {
-        // The build the dictionary for this
-        // emoji
+        // The build the dictionary for this emoji
 
         // An array of arrays.
         let combo = []
@@ -137,6 +196,7 @@ let emojiDictionary =
     return p
   }, {})
 emojiDictionary["PHOEPBLG"] = "{#}"
+emojiDictionary["AOE/PHOEPBLG"] = "emoji"
 
 console.log(JSON.stringify(Object.keys(unknownWords), null, 2))
 
@@ -146,12 +206,12 @@ console.log(`${invalid.length} emoji contained unknown words (printed above)`)
 console.log(`Total number of entries made:`)
 console.log(Object.keys(emojiDictionary).length)
 
-const markdownList =
+const markdownList = `"` +
   Object.keys(valid).reduce
     ( (a, b) =>
-        a + `\\n- ${valid[b].unicode}: ${valid[b].words.join(' ')}`
+        a + `- ${valid[b].unicode}: ${valid[b].words.join(' ')}\\n`
     , ''
-    )
+    ) + `"`
 
 fs.writeFileSync('emoji.md', markdownList, `utf8`)
 fs.writeFileSync('emoji.json', JSON.stringify(emojiDictionary, null, 1), `utf8`)
