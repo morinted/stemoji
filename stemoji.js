@@ -58,7 +58,6 @@ const exceptions =
   , kr: [ 'korean' ]
   , cn: [ 'china' ]
   , us: [ 'united states' ]
-  , gb: [ 'great britain' ]
   , fr: [ 'france' ]
   , es: [ 'spain' ]
   , de: [ 'denmark' ]
@@ -66,6 +65,11 @@ const exceptions =
   , uk: [ 'united kingdom' ]
   , it: [ 'italy' ]
   , ca: [ 'canada' ]
+  , tone1: [ 'tone', '1' ]
+  , tone2: [ 'tone', '2' ]
+  , tone3: [ 'tone', '3' ]
+  , tone4: [ 'tone', '4' ]
+  , tone5: [ 'tone', '5' ]
   }
 
 const doSubstitutes = (emojis) => {
@@ -80,12 +84,34 @@ const doSubstitutes = (emojis) => {
     , 'heavy_plus_sign': '+'
     , 'heavy_division_sign': '\u00F7'
     , 'heavy_minus_sign': '-'
+    , 'hotdog': 'hot_dog'
+    , 'biohazard': 'bio_hazard'
+    , 'vs': 'versus'
     , 'interrobang': 'exclamation_question'
     , 'bangbang': '!_!'
     , 'heavy_multiplication_x': 'times'
     , 'africas': 'africa'
     , 'tophat': 'top_hat'
     , 'tada': 'ta-da'
+    , 'mwgb': 'm_w_g_b'
+    , 'mwbb': 'm_w_b_b'
+    , 'mwgg': 'm_w_g_g'
+    , 'mmgb': 'm_m_g_b'
+    , 'mmbb': 'm_m_b_b'
+    , 'mmgg': 'm_m_g_g'
+    , 'wwbb': 'w_w_b_b'
+    , 'wwgg': 'w_w_g_g'
+    , 'wwgb': 'w_w_g_b'
+    , 'wwb': 'w_w_b'
+    , 'mwg': 'm_w_g'
+    , 'wwg': 'w_w_g'
+    , 'mmb': 'm_m_b'
+    , 'mmg': 'm_m_g'
+    , 'ww': 'w_w'
+    , 'mm': 'm_m'
+    , 'vulcan': 'spock'
+    , 'flag_gb': 'flag_great britain'
+    , 'flag_ac': 'flag_a_c'
     , 'flag_ad': 'flag_a_d'
     , 'flag_ae': 'flag_a_e'
     , 'flag_af': 'flag_a_f'
@@ -135,6 +161,7 @@ const doSubstitutes = (emojis) => {
     , 'flag_cm': 'flag_c_m'
     , 'flag_cn': 'flag_c_n'
     , 'flag_co': 'flag_c_o'
+    , 'flag_cp': 'flag_c_p'
     , 'flag_cr': 'flag_c_r'
     , 'flag_cu': 'flag_c_u'
     , 'flag_cv': 'flag_c_v'
@@ -143,11 +170,13 @@ const doSubstitutes = (emojis) => {
     , 'flag_cy': 'flag_c_y'
     , 'flag_cz': 'flag_c_z'
     , 'flag_de': 'flag_d_e'
+    , 'flag_dg': 'flag_d_g'
     , 'flag_dj': 'flag_d_j'
     , 'flag_dk': 'flag_d_k'
     , 'flag_dm': 'flag_d_m'
     , 'flag_do': 'flag_d_o'
     , 'flag_dz': 'flag_d_z'
+    , 'flag_ea': 'flag_e_a'
     , 'flag_ec': 'flag_e_c'
     , 'flag_ee': 'flag_e_e'
     , 'flag_eg': 'flag_e_g'
@@ -155,6 +184,7 @@ const doSubstitutes = (emojis) => {
     , 'flag_er': 'flag_e_r'
     , 'flag_es': 'flag_e_s'
     , 'flag_et': 'flag_e_t'
+    , 'flag_eu': 'flag_e_u'
     , 'flag_fi': 'flag_f_i'
     , 'flag_fj': 'flag_f_j'
     , 'flag_fk': 'flag_f_k'
@@ -186,6 +216,7 @@ const doSubstitutes = (emojis) => {
     , 'flag_hr': 'flag_h_r'
     , 'flag_ht': 'flag_h_t'
     , 'flag_hu': 'flag_h_u'
+    , 'flag_ic': 'flag_i_c'
     , 'flag_id': 'flag_i_d'
     , 'flag_ie': 'flag_i_e'
     , 'flag_il': 'flag_i_l'
@@ -299,6 +330,7 @@ const doSubstitutes = (emojis) => {
     , 'flag_sx': 'flag_s_x'
     , 'flag_sy': 'flag_s_y'
     , 'flag_sz': 'flag_s_z'
+    , 'flag_ta': 'flag_t_a'
     , 'flag_tc': 'flag_t_c'
     , 'flag_td': 'flag_t_d'
     , 'flag_tf': 'flag_t_f'
@@ -330,6 +362,7 @@ const doSubstitutes = (emojis) => {
     , 'flag_vu': 'flag_v_u'
     , 'flag_wf': 'flag_w_f'
     , 'flag_ws': 'flag_w_s'
+    , 'flag_xk': 'flag_x_k'
     , 'flag_ye': 'flag_y_e'
     , 'flag_yt': 'flag_y_t'
     , 'flag_za': 'flag_z_a'
@@ -392,6 +425,7 @@ const shortnames =
       return { shortname: x
              , words
              , duplicate: extendedEmojis[x].duplicate
+             , oldUnicode: extendedEmojis[x].unicode
              , unicode: extendedEmojis[x].unicode
                 .split('-').reduce((z, y) => {
                   return z + String.fromCodePoint(
@@ -487,6 +521,20 @@ const markdownList = `"` +
     }
     , ''
     ) + `"`
+
+const byUnicode =
+  valid.reduce((p, n) => {
+    p[n.oldUnicode] = true
+    return p
+  })
+const noDefinition = Object.keys(emojis).reduce((p, e) => {
+  if (!byUnicode[emojis[e].unicode]) {
+    return p + '\n  ' + emojis[e].shortname
+  }
+  return p
+}, '')
+
+console.log(`These shortcodes had no definition: ${noDefinition}`)
 
 fs.writeFileSync('emoji.md', markdownList, `utf8`)
 fs.writeFileSync('emoji.json', JSON.stringify(emojiDictionary, null, 1), `utf8`)
